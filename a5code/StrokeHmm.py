@@ -26,6 +26,8 @@ class HMM:
         self.featuresCorD = contOrDisc
         self.numVals = numVals
 
+        self.featureIndices = {}
+
         # All the probabilities start uninitialized until training
         self.priors = None
         self.emissions = None   #evidence model
@@ -38,10 +40,12 @@ class HMM:
         self.trainPriors( trainingData, trainingLabels )
         self.trainTransitions( trainingData, trainingLabels )
         self.trainEmissions( trainingData, trainingLabels ) 
+        print "------------------------------------------------------"
         print "HMM trained"
         print "Prior probabilities are:", self.priors
         print "Transition model is:", self.transitions
         print "Evidence model is:", self.emissions
+        print "------------------------------------------------------"
 
     def trainPriors( self, trainingData, trainingLabels ):
         ''' Train the priors based on the data and labels '''
@@ -126,30 +130,35 @@ class HMM:
 
               
     def label( self, data ):
+
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm '''
 
-        '''
-        #this code is if it isn in a weird dictionary format
-        for potential_base_evi in data[0]:
-            if data[0][potential_base_evi] == 1:
-                base_evi = potential_base_evi
-                print "base evidence is" + base_evi
-                break
-        '''
-
+        print "Data is: " + str(data)
+        print "States are: " + str(self.states)
+        print "FeatureNames are: " + str(self.featureNames)
+        print "Emissions are: " + str(self.emissions)
+        print "Feature Indices are " + str(self.featureIndices)
+        print "Transitions are " + str(self.transitions)
+        print "------------------------------------------------------"
 
         viterbi_calc = [{}]
         path = {}
 
         #calculating partial probability of first day/state
         for state in self.states:
-            #partial_prob = prior_prob of state * prob of evidence
-            viterbi_calc[0][state] = self.priors[state] * self.emissions[state][data[0]]
+            for f in self.featureNames:
+                first_value = data[0][f]
+                index = self.featureIndices[f][first_value]
+                viterbi_calc[0][state] = self.priors[state] * self.emissions[state][f][index]
 
             #puts the current state as the first step in the path of the current state
             path[state] = [state]
 
+        print "Viterbi_Calc is " + str(viterbi_calc)
+        print "Path is " + str(path)
+
+        print "------------------------------------------------------"
 
         #Run Viterbi for t > 0
         counter = 0
@@ -158,23 +167,39 @@ class HMM:
             viterbi_calc.append({})
             new_path = {}
 
-
             #for each state, find the max of the partial_prob * transition prob of the state * evidence given that state
             for s in self.states:
-                (prob, state) = max((viterbi_calc[t-1][new_state] * self.transitions[new_state][s] * self.emissions[s][data[t]], new_state) for new_state in self.states)
-                viterbi_calc[t][s] = prob
-                new_path[s] = path[state] + [s]
+                for f0 in self.featureNames:
+                    max_state = None
+                    max_prob = -1
+                    for new_state in self.states:
+                        value = data[t][f0]
+                        idx = self.featureIndices[f0][value]
+
+                        temp = viterbi_calc[t-1][new_state] * self.transitions[new_state][s] * self.emissions[s][f0][index]
+
+                        if temp > max_prob:
+                            max_prob = temp
+                            max_state = new_state
+
+
+                    #(prob, state) = max((viterbi_calc[t-1][new_state] * self.transitions[new_state][s] * self.emissions[s][f0][index], new_state) for new_state in self.states)
+
+                    viterbi_calc[t][s] = max_prob
+                    new_path[s] = path[max_state] + [s]
 
             #rewrite the old path with the best/max path
             path = new_path
+            
 
-        print "The viterbi calculation is: " + str(viterbi_calc)
-        print
-        print "The paths are: " + str(path)
-        print
+        
         
         (prob, state) = max((viterbi_calc[t][s1], s1) for s1 in self.states)
-        return (prob, path[state])
+
+        print "Best path is: " + str(path[state])
+        print "Prob of best path is: " + str(prob)
+
+        return path[state]
 
 
 
@@ -203,28 +228,23 @@ class HMM:
 
 def test_trainHMM():
     test_states = ['Sunny', 'Cloudy', 'Rainy']
-    test_features = ['Dry', 'Dryish', 'Damp', 'Soggy']
-    test_contOrDisc = {'Dry': DISCRETE, 'Dryish': DISCRETE, 'Damp': DISCRETE, 'Soggy': DISCRETE}
-    test_numVals = {'Dry': 2, 'Dryish': 2, 'Damp': 2, 'Soggy': 2}
+    test_features = ['Wetness']
+    test_contOrDisc = {'Wetness': DISCRETE}
+    test_numVals = {'Wetness': 4}
 
     test_hmm = HMM(test_states, test_features, test_contOrDisc, test_numVals)
-    test_hmm.isTrained = True
+
+    
     test_hmm.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
     test_hmm.transitions = {'Sunny': {'Sunny': 0.500, 'Cloudy': 0.375, 'Rainy': 0.125}, \
                              'Cloudy': {'Sunny': 0.250, 'Cloudy': 0.125, 'Rainy': 0.675}, \
                              'Rainy': {'Sunny': 0.250, 'Cloudy': 0.375, 'Rainy': 0.375}}
-    test_hmm.emissions = {'Sunny': {'Dry': 0.60, 'Dryish': 0.20, 'Damp': 0.15, 'Soggy': 0.05}, \
-                            'Cloudy': {'Dry': 0.25, 'Dryish': 0.25, 'Damp': 0.25, 'Soggy': 0.25}, \
-                            'Rainy': {'Dry': 0.05, 'Dryish': 0.10, 'Damp': 0.35, 'Soggy': 0.50}}
+    test_hmm.emissions = {'Sunny': {'Wetness': [0.60, 0.20, 0.15, 0.05]}, \
+                            'Cloudy': {'Wetness': [0.25, 0.25, 0.25, 0.25]}, \
+                            'Rainy': {'Wetness': [0.05, 0.10, 0.35, 0.50]}}
 
-    #weird dictionary format
-    '''
-    test_sequence = [{'Dry': 1, 'Dyrish': 0, 'Damp': 0, 'Soggy': 0},\
-                        {'Dry': 0, 'Dyrish': 0, 'Damp': 1, 'Soggy': 0},\
-                        {'Dry': 0, 'Dyrish': 0, 'Damp': 0, 'Soggy': 1}]
-    '''
-
-    test_sequence = ['Dry', 'Damp', 'Soggy']
+    test_sequence = [{'Wetness': 'Dry'}, {'Wetness': 'Damp'}, {'Wetness': 'Soggy'}]
+    test_hmm.featureIndices['Wetness'] = {'Dry': 0, 'Dryish': 1, 'Damp': 2, 'Soggy': 3}
     return test_hmm.label(test_sequence)
 
 
@@ -237,6 +257,9 @@ class StrokeLabeler:
         drawingLabels = ['Wire', 'AND', 'OR', 'XOR', 'NAND', 'NOT']
         textLabels = ['Label']
         self.labels = ['drawing', 'text']
+
+
+        self.featureIndices = {}
         
         self.labelDict = {}
         for l in drawingLabels:
@@ -295,7 +318,11 @@ class StrokeLabeler:
 
 
             ret.append(d)  # append the feature dictionary to the list
-            
+        self.featureIndices['length'] = {0: 0, 1: 1}
+
+
+
+
         return ret
     
     def trainHMM( self, trainingFiles ):
@@ -349,6 +376,7 @@ class StrokeLabeler:
             print "HMM must be trained first"
             return []
         strokeFeatures = self.featurefy(strokes)
+        self.hmm.featureIndices = self.featureIndices
         return self.hmm.label(strokeFeatures)
 
     def saveFile( self, strokes, labels, originalFile, outFile ):
@@ -625,4 +653,16 @@ class Stroke:
 
     # You can (and should) define more features here
 
+
+'''
+sl = StrokeLabeler()
+sl.trainHMMDir("../trainingFiles/")
+strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
+#print labels
+mylabels = sl.labelStrokes(strokes)
+'''
+print "------------------------------------------------------"
+print "------------------------------------------------------"
+print "------------------------------------------------------"
+test_trainHMM()
 
