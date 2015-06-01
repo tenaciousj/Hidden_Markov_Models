@@ -26,6 +26,7 @@ class HMM:
         self.featuresCorD = contOrDisc
         self.numVals = numVals
 
+        #added field called featureIndices that will keep track of which feature option corresponds with which index
         self.featureIndices = {}
 
         # All the probabilities start uninitialized until training
@@ -106,7 +107,7 @@ class HMM:
                 for f in features.keys():
                     featureVals[oneSketchLabels[j]][f].append(features[f])
 
-        # Do a slightly different thing for conituous vs. discrete features
+        # Do a slightly different thing for continuous vs. discrete features
         for s in featureVals.keys():
             for f in featureVals[s].keys():
                 if self.featuresCorD[f] == CONTINUOUS:
@@ -135,12 +136,12 @@ class HMM:
             This is an implementation of the Viterbi algorithm '''
 
         # print "Data is: " + str(data)
-        print "States are: " + str(self.states)
-        print "FeatureNames are: " + str(self.featureNames)
+        # print "States are: " + str(self.states)
+        # print "FeatureNames are: " + str(self.featureNames)
         # print "Emissions are: " + str(self.emissions)
         # print "Feature Indices are " + str(self.featureIndices)
-        print "Transitions are " + str(self.transitions)
-        print "States are " + str(self.states)
+        # print "Transitions are " + str(self.transitions)
+        # print "States are " + str(self.states)
         # print "------------------------------------------------------"
 
         viterbi_calc = [{}]
@@ -149,17 +150,17 @@ class HMM:
         #calculating partial probability of first day/state
         for state in self.states:
             for f in self.featureNames:
+                #gets the value of the feature f at first day
                 first_value = data[0][f]
+
+                #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
                 index = self.featureIndices[f][first_value]
+
+                #calculates the partial probability at the first step
                 viterbi_calc[0][state] = self.priors[state] * self.emissions[state][f][index]
 
             #puts the current state as the first step in the path of the current state
             path[state] = [state]
-
-        print "Viterbi_Calc is " + str(viterbi_calc)
-        print "Path is " + str(path)
-
-        print "------------------------------------------------------"
 
         #Run Viterbi for t > 0
         counter = 0
@@ -170,27 +171,24 @@ class HMM:
 
 
             for f0 in self.featureNames:
+                #gets the value of the feature f at day
                 curr_val = data[t][f0]
+
+                #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
                 idx = self.featureIndices[f0][curr_val]
                 for y in self.states:
-                    idx = self.featureIndices[f0][curr_val]
-                    temp = []
-                    c=[]
-                    (prob, state, list_of_calc, c) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx], y0, temp.append(str(viterbi_calc[t-1][y0])+"*"+str(self.transitions[y0][y])+"*"+str(self.emissions[y][f0][idx])),viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx]) for y0 in self.states)
 
+                    #gets the max partial probability
+                    (prob, state) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx], y0) for y0 in self.states)
 
+                    #assigns it to the viterbi calculation dictionary and keeps track of the paths taken so far
                     viterbi_calc[t][y] = prob
                     new_path[y] = path[state] + [y]
 
-                    print "Max prob: "+str(prob)
-
-                    print temp
-                    print c
-                print "------------------NEW STATE--------------------"
             path = new_path
 
             
-        
+        #gets the max viterbi calculation with its accompanying path
         (prob, state) = max((viterbi_calc[t][s1], s1) for s1 in self.states)
 
         print "Best path is: " + str(path[state])
@@ -223,26 +221,7 @@ class HMM:
         return prob
         
 
-def test_trainHMM():
-    test_states = ['Sunny', 'Cloudy', 'Rainy']
-    test_features = ['Wetness']
-    test_contOrDisc = {'Wetness': DISCRETE}
-    test_numVals = {'Wetness': 4}
 
-    test_hmm = HMM(test_states, test_features, test_contOrDisc, test_numVals)
-    test_hmm.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
-    test_hmm.transitions = {'Sunny': {'Sunny': 0.500, 'Cloudy': 0.25, 'Rainy': 0.25}, \
-                             'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': 0.375}, \
-                             'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy': 0.375}}
-    test_hmm.emissions = {'Sunny': {'Wetness': [0.60, 0.20, 0.15, 0.05]}, \
-                            'Cloudy': {'Wetness': [0.25, 0.25, 0.25, 0.25]}, \
-                            'Rainy': {'Wetness': [0.05, 0.10, 0.35, 0.50]}}
-
-    print "HELLO"+str(test_hmm.transitions)
-
-    test_sequence = [{'Wetness': 'Dry'}, {'Wetness': 'Damp'}, {'Wetness': 'Soggy'}]
-    test_hmm.featureIndices['Wetness'] = {'Dry': 0, 'Dryish': 1, 'Damp': 2, 'Soggy': 3}
-    return test_hmm.label(test_sequence)
 
 
 
@@ -256,6 +235,7 @@ class StrokeLabeler:
         self.labels = ['drawing', 'text']
 
 
+        #added field called featureIndices that will keep track of which feature option corresponds with which index
         self.featureIndices = {}
         
         self.labelDict = {}
@@ -306,6 +286,7 @@ class StrokeLabeler:
                 d['length'] = 0
             else:
                 d['length'] = 1
+
 
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
@@ -651,11 +632,37 @@ class Stroke:
     # You can (and should) define more features here
 
 
+def test_trainHMM():
+    '''
+    Part 1 Viterbi Testing Example: Dry, Dryish, Damp, Soggy Seaweed Example
+    '''
+    test_states = ['Sunny', 'Cloudy', 'Rainy']
+    test_features = ['Wetness']
+    test_contOrDisc = {'Wetness': DISCRETE}
+    test_numVals = {'Wetness': 4}
+
+    test_hmm = HMM(test_states, test_features, test_contOrDisc, test_numVals)
+    test_hmm.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
+    test_hmm.transitions = {'Sunny': {'Sunny': 0.500, 'Cloudy': 0.25, 'Rainy': 0.25}, \
+                             'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': 0.375}, \
+                             'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy': 0.375}}
+    test_hmm.emissions = {'Sunny': {'Wetness': [0.60, 0.20, 0.15, 0.05]}, \
+                            'Cloudy': {'Wetness': [0.25, 0.25, 0.25, 0.25]}, \
+                            'Rainy': {'Wetness': [0.05, 0.10, 0.35, 0.50]}}
+
+    
+
+    test_sequence = [{'Wetness': 'Dry'}, {'Wetness': 'Damp'}, {'Wetness': 'Soggy'}]
+
+    #Dry will be the 0th index of the features list, Dry's index will be 1, etc.
+    test_hmm.featureIndices['Wetness'] = {'Dry': 0, 'Dryish': 1, 'Damp': 2, 'Soggy': 3}
+    return test_hmm.label(test_sequence)
+
 
 sl = StrokeLabeler()
 sl.trainHMMDir("../trainingFiles/")
 strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
-
+print labels
 mylabels = sl.labelStrokes(strokes)
 
 # print "------------------------------------------------------"
