@@ -134,13 +134,14 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm '''
 
-        print "Data is: " + str(data)
+        # print "Data is: " + str(data)
         print "States are: " + str(self.states)
         print "FeatureNames are: " + str(self.featureNames)
-        print "Emissions are: " + str(self.emissions)
-        print "Feature Indices are " + str(self.featureIndices)
+        # print "Emissions are: " + str(self.emissions)
+        # print "Feature Indices are " + str(self.featureIndices)
         print "Transitions are " + str(self.transitions)
-        print "------------------------------------------------------"
+        print "States are " + str(self.states)
+        # print "------------------------------------------------------"
 
         viterbi_calc = [{}]
         path = {}
@@ -167,32 +168,28 @@ class HMM:
             viterbi_calc.append({})
             new_path = {}
 
-            #for each state, find the max of the partial_prob * transition prob of the state * evidence given that state
-            for s in self.states:
-                for f0 in self.featureNames:
-                    max_state = None
-                    max_prob = -1
-                    for new_state in self.states:
-                        value = data[t][f0]
-                        idx = self.featureIndices[f0][value]
 
-                        temp = viterbi_calc[t-1][new_state] * self.transitions[new_state][s] * self.emissions[s][f0][index]
-
-                        if temp > max_prob:
-                            max_prob = temp
-                            max_state = new_state
+            for f0 in self.featureNames:
+                curr_val = data[t][f0]
+                idx = self.featureIndices[f0][curr_val]
+                for y in self.states:
+                    idx = self.featureIndices[f0][curr_val]
+                    temp = []
+                    c=[]
+                    (prob, state, list_of_calc, c) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx], y0, temp.append(str(viterbi_calc[t-1][y0])+"*"+str(self.transitions[y0][y])+"*"+str(self.emissions[y][f0][idx])),viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx]) for y0 in self.states)
 
 
-                    #(prob, state) = max((viterbi_calc[t-1][new_state] * self.transitions[new_state][s] * self.emissions[s][f0][index], new_state) for new_state in self.states)
+                    viterbi_calc[t][y] = prob
+                    new_path[y] = path[state] + [y]
 
-                    viterbi_calc[t][s] = max_prob
-                    new_path[s] = path[max_state] + [s]
+                    print "Max prob: "+str(prob)
 
-            #rewrite the old path with the best/max path
+                    print temp
+                    print c
+                print "------------------NEW STATE--------------------"
             path = new_path
-            
 
-        
+            
         
         (prob, state) = max((viterbi_calc[t][s1], s1) for s1 in self.states)
 
@@ -233,15 +230,15 @@ def test_trainHMM():
     test_numVals = {'Wetness': 4}
 
     test_hmm = HMM(test_states, test_features, test_contOrDisc, test_numVals)
-
-    
     test_hmm.priors = {'Sunny': 0.63, 'Cloudy': 0.17, 'Rainy': 0.20}
-    test_hmm.transitions = {'Sunny': {'Sunny': 0.500, 'Cloudy': 0.375, 'Rainy': 0.125}, \
-                             'Cloudy': {'Sunny': 0.250, 'Cloudy': 0.125, 'Rainy': 0.675}, \
-                             'Rainy': {'Sunny': 0.250, 'Cloudy': 0.375, 'Rainy': 0.375}}
+    test_hmm.transitions = {'Sunny': {'Sunny': 0.500, 'Cloudy': 0.25, 'Rainy': 0.25}, \
+                             'Cloudy': {'Sunny': 0.375, 'Cloudy': 0.125, 'Rainy': 0.375}, \
+                             'Rainy': {'Sunny': 0.125, 'Cloudy': 0.675, 'Rainy': 0.375}}
     test_hmm.emissions = {'Sunny': {'Wetness': [0.60, 0.20, 0.15, 0.05]}, \
                             'Cloudy': {'Wetness': [0.25, 0.25, 0.25, 0.25]}, \
                             'Rainy': {'Wetness': [0.05, 0.10, 0.35, 0.50]}}
+
+    print "HELLO"+str(test_hmm.transitions)
 
     test_sequence = [{'Wetness': 'Dry'}, {'Wetness': 'Damp'}, {'Wetness': 'Soggy'}]
     test_hmm.featureIndices['Wetness'] = {'Dry': 0, 'Dryish': 1, 'Damp': 2, 'Soggy': 3}
@@ -654,15 +651,15 @@ class Stroke:
     # You can (and should) define more features here
 
 
-'''
+
 sl = StrokeLabeler()
 sl.trainHMMDir("../trainingFiles/")
 strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
-#print labels
+
 mylabels = sl.labelStrokes(strokes)
-'''
-print "------------------------------------------------------"
-print "------------------------------------------------------"
-print "------------------------------------------------------"
-test_trainHMM()
+
+# print "------------------------------------------------------"
+# print "------------------------------------------------------"
+# print "------------------------------------------------------"
+# test_trainHMM()
 
