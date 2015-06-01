@@ -135,14 +135,14 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm '''
 
-        # print "Data is: " + str(data)
-        # print "States are: " + str(self.states)
-        # print "FeatureNames are: " + str(self.featureNames)
-        # print "Emissions are: " + str(self.emissions)
-        # print "Feature Indices are " + str(self.featureIndices)
-        # print "Transitions are " + str(self.transitions)
-        # print "States are " + str(self.states)
-        # print "------------------------------------------------------"
+        print "Data is: " + str(data)
+        print "States are: " + str(self.states)
+        print "FeatureNames are: " + str(self.featureNames)
+        print "Emissions are: " + str(self.emissions)
+        print "Feature Indices are " + str(self.featureIndices)
+        print "Transitions are " + str(self.transitions)
+        print "States are " + str(self.states)
+        print "------------------------------------------------------"
 
         viterbi_calc = [{}]
         path = {}
@@ -163,7 +163,7 @@ class HMM:
             path[state] = [state]
 
         #Run Viterbi for t > 0
-        counter = 0
+        #counter = 0
         for t in range(1, len(data)):
             #add new dictionaries
             viterbi_calc.append({})
@@ -356,6 +356,36 @@ class StrokeLabeler:
         strokeFeatures = self.featurefy(strokes)
         self.hmm.featureIndices = self.featureIndices
         return self.hmm.label(strokeFeatures)
+
+
+    def confusion(self, trueLabels, classifications):
+        len_trueLabels = len(trueLabels)
+        len_classifications = len(classifications)
+
+        if len_trueLabels != len_classifications:
+            print "Truth Labels and Classifications are different lengths. Check inputs."
+            return None
+
+
+        confusion_matrix = {l: {} for l in self.labels}
+
+        for entry in confusion_matrix:
+            confusion_matrix[entry] = {l: 0 for l in self.labels}
+        
+        
+        for i in range(len_trueLabels):
+            t = trueLabels[i]
+            c = classifications[i]
+            if t == c:
+                confusion_matrix[t][t] += 1
+            else:
+                confusion_matrix[t][c] += 1
+
+        print "Confusion Matrix is: " + str(confusion_matrix)
+        return confusion_matrix
+
+
+
 
     def saveFile( self, strokes, labels, originalFile, outFile ):
         ''' Save the labels of the stroke objects and the stroke objects themselves
@@ -662,8 +692,10 @@ def test_trainHMM():
 sl = StrokeLabeler()
 sl.trainHMMDir("../trainingFiles/")
 strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
-print labels
+print "True labels are: " + str(labels)
 mylabels = sl.labelStrokes(strokes)
+confusion_matrix = sl.confusion(labels, mylabels)
+
 
 # print "------------------------------------------------------"
 # print "------------------------------------------------------"
