@@ -10,6 +10,7 @@ import copy
 import guid
 import math
 import os
+import numpy
 
 # A couple contants
 CONTINUOUS = 0
@@ -284,17 +285,26 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-
-
-        self.featureNames = ['nearest_neighbor_dist']
-        self.contOrDisc = {'nearest_neighbor_dist' : DISCRETE}
-        self.numFVals = {'nearest_neighbor_dist' : 2}
         
+        # self.featureNames = ['x']
+        # self.contOrDisc = {'x' : DISCRETE}
+        # self.numFVals = {'x' : 4}
+        # self.numFVals = {'x' : 2}
+        # self.featureNames = ['draw_speed']
+        # self.contOrDisc = {'draw_speed' : DISCRETE}
+        # self.numFVals = {'draw_speed' : 4}
 
+        # self.featureNames = ['nearest_neighbor_dist']
+        # self.contOrDisc = {'nearest_neighbor_dist' : DISCRETE}
+        # self.numFVals = {'nearest_neighbor_dist' : 2}
+        
+        # self.featureNames = ['length', 'nearest_neighbor_dist', 'draw_speed', 'x', 'bb_area']
+        # self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE, 'draw_speed' : DISCRETE, 'x' : DISCRETE, 'bb_area' : DISCRETE}
+        # self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2, 'draw_speed' : 4, 'x' : 4, 'bb_area' : 4}
 
-        # self.featureNames = ['length', 'nearest_neighbor_dist']
-        # self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE}
-        # self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2}
+        self.featureNames = ['bb_area']
+        self.contOrDisc = {'bb_area' : DISCRETE}
+        self.numFVals = {'bb_area' : 4}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -311,23 +321,79 @@ class StrokeLabeler:
         sum_dist = 0
         mean_dist = None
         stroke_dist = []
+        draw_speed = []
+        sum_speed = 0
+        mean_speed = None
+        x_coord = []
+        bounding_box_area = []
         for s in strokes: #loop through all strokes
             closest_stroke_dist = 1000000
-            #nearest_stroke = None
             start_pt = s.points[0]
+            start_time = s.points[0][-1]
+            end_time = s.points[-1][-1]
+            speed = (end_time - start_time)/float(len(s.points))
+            #print "Speed " + str(speed)
+            draw_speed.append(speed)
+            sum_speed += speed
+            xx = 0
+            min_x = 1000000
+            max_x = -1000000
+            min_y = 1000000
+            max_y = -1000000
+            for k in range(len(s.points)):
+                x = s.points[k][0]
+                y = s.points[k][1]
+                if x < min_x:
+                    min_x = x
+
+                if x > max_x:
+                    max_x = x
+
+                if y < min_y:
+                    min_y = y
+
+                if y > max_y:
+                    max_y = y
+                xx += s.points[k][0]
+            x_coord.append(xx/float(len(s.points)))
+            bb_area = (max_y - min_y) * (max_x - min_x)
+            bounding_box_area.append(bb_area)
+            # ret = 0
+            # prev = self.points[0]
+            # for p in self.points[1:]:
+            #     # use Euclidean distance
+            #     xdiff = p[0] - prev[0]
+            #     ydiff = p[1] - prev[1]
+            #     ret += math.sqrt(xdiff**2 + ydiff**2)
+            #     prev = p
+    
             for s2 in strokes: #loop through all strokes for tuples
                 if s != s2:
-                    s2_pt = s2.points[0]
-                    xdiff = start_pt[0] - s2_pt[0]
-                    ydiff = start_pt[1] - s2_pt[1]
-                    dist = math.sqrt(xdiff**2 + ydiff**2) #calculates distance
-                    if dist < closest_stroke_dist: #checks if its better than previous
-                        closest_stroke_dist = dist
-            
+                    max_idx = len(s2.points)
+                    for j in range(1,max_idx):
+                        s2_pt = s2.points[j]
+                        xdiff = start_pt[0] - s2_pt[0]
+                        ydiff = start_pt[1] - s2_pt[1]
+
+                        dist = math.sqrt(xdiff**2 + ydiff**2) #calculates distance
+                        if dist < closest_stroke_dist: #checks if its better than previous
+                            closest_stroke_dist = dist
             sum_dist += closest_stroke_dist #sum the distances
             stroke_dist.append(closest_stroke_dist) #add it to a list
+
         mean_dist = sum_dist/len(strokes) #calculate the threshold/bin value
-                    
+        q1_speed = numpy.percentile(draw_speed, 25)
+        median_speed = numpy.percentile(draw_speed, 50)
+        q3_speed = numpy.percentile(draw_speed, 75)
+        mean_speed = sum_speed/len(strokes)
+        median_dist = numpy.percentile(stroke_dist, 50)
+        q1_x = numpy.percentile(x_coord, 25)
+        median_x = numpy.percentile(x_coord, 50)
+        q3_x = numpy.percentile(x_coord, 75)
+        q1_bb = numpy.percentile(bounding_box_area, 25)
+        bb_median = numpy.percentile(bounding_box_area, 50)
+        q3_bb = numpy.percentile(bounding_box_area, 75)
+        bb_mean = numpy.mean(bounding_box_area)           
             # If we wanted to use length as a continuous feature, we
             # would simply use the following line to set its value
             #d['length'] = s.length()
@@ -353,14 +419,44 @@ class StrokeLabeler:
             # else:
             #     d['length'] = 1
 
-            dist = stroke_dist[i]
-            if dist < mean_dist:
-                d['nearest_neighbor_dist'] = 0
+            # dist = stroke_dist[i]
+            # if dist < median_dist:
+            #     d['nearest_neighbor_dist'] = 0
+            # else:
+            #     d['nearest_neighbor_dist'] = 1
+
+            # sp = draw_speed[i]
+            # if sp < q1_speed:
+            #     d['draw_speed'] = 0
+            # elif sp < median_speed:
+            #     d['draw_speed'] = 1
+            # elif sp < q3_speed:
+            #     d['draw_speed'] = 2
+            # else:
+            #     d['draw_speed'] = 3
+
+            # xxx = x_coord[i]
+            # if xxx < q1_x:
+            #     d['x'] = 0
+            # elif xxx < median_x:
+            #     d['x'] = 1
+            # elif xxx < q3_x:
+            #     d['x'] = 2
+            # else:
+            #     d['x'] = 3
+            bb = bounding_box_area[i]
+            if bb < q1_bb:
+                d['bb_area'] = 0
+            elif bb < bb_median:
+                d['bb_area'] = 1
+            elif bb < q3_bb:
+                d['bb_area'] = 2
             else:
-                d['nearest_neighbor_dist'] = 1
-
-
-
+                d['bb_area'] = 3
+            # if xxx < median_x:
+            #     d['x'] = 0
+            # else:
+            #     d['x'] = 1
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
             # you also need to add them to the three member data structures
@@ -370,8 +466,10 @@ class StrokeLabeler:
 
             ret.append(d)  # append the feature dictionary to the list
         # self.featureIndices['length'] = {0: 0, 1: 1}
-        self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
-
+        # self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
+        # self.featureIndices['draw_speed'] = {0: 0, 1: 1, 2: 2, 3: 3}
+        # self.featureIndices['x'] = {0: 0, 1: 1, 2: 2, 3: 3}
+        self.featureIndices['bb_area'] = {0: 0, 1: 1, 2: 2, 3: 3}
         return ret
     
     def trainHMM( self, trainingFiles ):
