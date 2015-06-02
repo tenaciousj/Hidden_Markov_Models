@@ -314,7 +314,7 @@ class StrokeLabeler:
                     ydiff = start_pt[1] - s2_pt[1]
                     dist = math.sqrt(xdiff**2 + ydiff**2) #calculates distance
                     if dist < closest_stroke_dist: #checks if its better than previous
-                        closest_stroke_dist = dis
+                        closest_stroke_dist = dist
             
             sum_dist += closest_stroke_dist #sum the distances
             stroke_dist.append(closest_stroke_dist) #add it to a list
@@ -752,12 +752,40 @@ def test_trainHMM():
     return test_hmm.label(test_sequence)
 
 
-# sl = StrokeLabeler()
-# sl.trainHMMDir("../trainingFiles/")
-# strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
-# print "True labels are: " + str(labels)
-# mylabels = sl.labelStrokes(strokes)
-# confusion_matrix = sl.confusion(labels, mylabels)
+##############CODE FOR RESULTS.TXT AND CONFUSION MATRIX##############
+sl = StrokeLabeler()
+
+#training files
+sl.trainHMMDir("../trainForResults/")
+
+true_labels = []
+classifications_labels = []
+
+for fFileObj in os.walk("../testForResults/"):
+    lFileList = fFileObj[2]
+    break
+
+
+goodList = []
+for x in lFileList:
+    if not x.startswith('.'):
+        goodList.append(x)
+
+tFiles = [ "../testForResults/" + "/" + f for f in goodList ] 
+
+for test_file in tFiles:
+
+    strokes, labels = sl.loadLabeledFile(test_file)
+    true_labels.extend(labels)
+
+    mylabels = sl.labelStrokes(strokes)
+    classifications_labels.extend(mylabels)
+
+big_confusion_matrix = sl.confusion(true_labels, classifications_labels)
+
+print "------------------------------------------------------"
+print "BIG CONFUSION MATRIX"
+print big_confusion_matrix
 
 
 # print "------------------------------------------------------"
