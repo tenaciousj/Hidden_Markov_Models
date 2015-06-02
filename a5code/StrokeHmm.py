@@ -1,3 +1,10 @@
+#Hidden Markov Models
+#-------------------------------------------------
+#Jeanette Pranin (jrp338)
+#Jaiveer Kothari (jvk383)
+#Nishant Subramani (nso155)
+
+
 import xml.dom.minidom
 import copy
 import guid
@@ -135,6 +142,7 @@ class HMM:
         ''' Find the most likely labels for the sequence of data
             This is an implementation of the Viterbi algorithm '''
 
+        #Debugging tools to help see what is being accessed
         print "Data is: " + str(data)
         print "States are: " + str(self.states)
         print "FeatureNames are: " + str(self.featureNames)
@@ -144,6 +152,8 @@ class HMM:
         print "States are " + str(self.states)
         print "------------------------------------------------------"
 
+        #creates a list of dictionaries that will hold the partial probabilities of each state
+        #viterbi_calc will be used to refer to the prior partial probabilities in the code below
         viterbi_calc = [{}]
         path = {}
 
@@ -169,26 +179,27 @@ class HMM:
             viterbi_calc.append({})
             new_path = {}
 
-
             for f0 in self.featureNames:
-                #gets the value of the feature f at day
+                #gets the value of the feature f at day t
                 curr_val = data[t][f0]
 
                 #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
                 idx = self.featureIndices[f0][curr_val]
                 for y in self.states:
 
-                    #gets the max partial probability
+                    #gets the max partial probability of the current state
                     (prob, state) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx], y0) for y0 in self.states)
 
-                    #assigns it to the viterbi calculation dictionary and keeps track of the paths taken so far
+                    #assigns prob (the partial probability of the current state) to the viterbi calculation dictionary and keeps track of the paths taken so far
                     viterbi_calc[t][y] = prob
+
+                    #keep track of the paths so far
                     new_path[y] = path[state] + [y]
 
             path = new_path
 
             
-        #gets the max viterbi calculation with its accompanying path
+        #gets the max viterbi calculation with its accompanying best path
         (prob, state) = max((viterbi_calc[t][s1], s1) for s1 in self.states)
 
         print "Best path is: " + str(path[state])
