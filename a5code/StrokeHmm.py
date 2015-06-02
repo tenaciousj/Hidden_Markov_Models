@@ -159,6 +159,10 @@ class HMM:
 
         #calculating partial probability of first day/state
         for state in self.states:
+
+            #keeps tracks of the evidence probability of every feature
+            first_feature_vals = []
+
             for f in self.featureNames:
                 #gets the value of the feature f at first day
                 first_value = data[0][f]
@@ -166,11 +170,20 @@ class HMM:
                 #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
                 index = self.featureIndices[f][first_value]
 
-                #calculates the partial probability at the first step
-                viterbi_calc[0][state] = self.priors[state] * self.emissions[state][f][index]
+                #add to the feature_vals
+                first_feature_vals.append(self.emissions[state][f][index])
+
+            #can multiply the probabilities together because we assume they are independent
+            first_evi = 1
+            for feat in first_feature_vals:
+                first_evi *= feat
+
+            #calculates the partial probability at the first step
+            viterbi_calc[0][state] = self.priors[state] * first_evi
 
             #puts the current state as the first step in the path of the current state
             path[state] = [state]
+
 
         #Run Viterbi for t > 0
         #counter = 0
@@ -179,22 +192,30 @@ class HMM:
             viterbi_calc.append({})
             new_path = {}
 
-            for f0 in self.featureNames:
-                #gets the value of the feature f at day t
-                curr_val = data[t][f0]
 
-                #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
-                idx = self.featureIndices[f0][curr_val]
-                for y in self.states:
+            for y in self.states:
+                curr_feature_vals = []
 
-                    #gets the max partial probability of the current state
-                    (prob, state) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*self.emissions[y][f0][idx], y0) for y0 in self.states)
+                for f0 in self.featureNames:
+                    #gets the value of the feature f at day t
+                    curr_val = data[t][f0]
 
-                    #assigns prob (the partial probability of the current state) to the viterbi calculation dictionary and keeps track of the paths taken so far
-                    viterbi_calc[t][y] = prob
+                    #gets the index of the feature f (e.g. Dry's index is 0, Dryish's index is 1, etc.)
+                    idx = self.featureIndices[f0][curr_val]
 
-                    #keep track of the paths so far
-                    new_path[y] = path[state] + [y]
+                    curr_feature_vals.append(self.emissions[y][f0][idx])
+                curr_evi = 1
+                for curr_feat in curr_feature_vals:
+                    curr_evi *= curr_feat
+
+                #gets the max partial probability of the current state
+                (prob, state) = max((viterbi_calc[t-1][y0]*self.transitions[y0][y]*curr_evi, y0) for y0 in self.states)
+
+                #assigns prob (the partial probability of the current state) to the viterbi calculation dictionary and keeps track of the paths taken so far
+                viterbi_calc[t][y] = prob
+
+                #keep track of the paths so far
+                new_path[y] = path[state] + [y]
 
             path = new_path
 
@@ -263,9 +284,9 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length']
-        self.contOrDisc = {'length': DISCRETE}
-        self.numFVals = { 'length': 2}
+        self.featureNames = ['length', 'hello']
+        self.contOrDisc = {'length': DISCRETE, 'hello': DISCRETE}
+        self.numFVals = {'length': 2, 'hello': 2}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -295,8 +316,10 @@ class StrokeLabeler:
             l = s.length()
             if l < 300:
                 d['length'] = 0
+                d['hello'] = 0
             else:
                 d['length'] = 1
+                d['hello'] = 1
 
 
             # We can add more features here just by adding them to the dictionary
@@ -308,6 +331,7 @@ class StrokeLabeler:
 
             ret.append(d)  # append the feature dictionary to the list
         self.featureIndices['length'] = {0: 0, 1: 1}
+        self.featureIndices['hello'] = {0: 0, 1: 1}
 
 
 
