@@ -298,13 +298,14 @@ class StrokeLabeler:
         # self.contOrDisc = {'nearest_neighbor_dist' : DISCRETE}
         # self.numFVals = {'nearest_neighbor_dist' : 2}
         
-        # self.featureNames = ['length', 'nearest_neighbor_dist', 'draw_speed', 'x', 'bb_area']
-        # self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE, 'draw_speed' : DISCRETE, 'x' : DISCRETE, 'bb_area' : DISCRETE}
-        # self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2, 'draw_speed' : 4, 'x' : 4, 'bb_area' : 4}
+        #all 5 features together
+        self.featureNames = ['length', 'nearest_neighbor_dist', 'draw_speed', 'x', 'bb_area']
+        self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE, 'draw_speed' : DISCRETE, 'x' : DISCRETE, 'bb_area' : DISCRETE}
+        self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2, 'draw_speed' : 4, 'x' : 4, 'bb_area' : 4}
 
-        self.featureNames = ['bb_area']
-        self.contOrDisc = {'bb_area' : DISCRETE}
-        self.numFVals = {'bb_area' : 4}
+        # self.featureNames = ['bb_area']
+        # self.contOrDisc = {'bb_area' : DISCRETE}
+        # self.numFVals = {'bb_area' : 4}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -328,19 +329,21 @@ class StrokeLabeler:
         bounding_box_area = []
         for s in strokes: #loop through all strokes
             closest_stroke_dist = 1000000
-            start_pt = s.points[0]
-            start_time = s.points[0][-1]
-            end_time = s.points[-1][-1]
-            speed = (end_time - start_time)/float(len(s.points))
+            start_pt = s.points[0] #find the first pt
+            start_time = s.points[0][-1] #find the start time of a stroke
+            end_time = s.points[-1][-1] #find the end time
+            speed = (end_time - start_time)/float(len(s.points)) #find the actual time per point in the stroke
             #print "Speed " + str(speed)
-            draw_speed.append(speed)
+            draw_speed.append(speed) #add it in
             sum_speed += speed
             xx = 0
+            #bounding box area calc
             min_x = 1000000
             max_x = -1000000
             min_y = 1000000
             max_y = -1000000
             for k in range(len(s.points)):
+                #find the x and y coordinate of each point on the stroke
                 x = s.points[k][0]
                 y = s.points[k][1]
                 if x < min_x:
@@ -354,18 +357,11 @@ class StrokeLabeler:
 
                 if y > max_y:
                     max_y = y
+                #check if its dimensions are larger/smaller than the max and min
                 xx += s.points[k][0]
-            x_coord.append(xx/float(len(s.points)))
-            bb_area = (max_y - min_y) * (max_x - min_x)
+            x_coord.append(xx/float(len(s.points))) #add the average x coordinate to the list
+            bb_area = (max_y - min_y) * (max_x - min_x) #calc bounding box area and add to bb_area list
             bounding_box_area.append(bb_area)
-            # ret = 0
-            # prev = self.points[0]
-            # for p in self.points[1:]:
-            #     # use Euclidean distance
-            #     xdiff = p[0] - prev[0]
-            #     ydiff = p[1] - prev[1]
-            #     ret += math.sqrt(xdiff**2 + ydiff**2)
-            #     prev = p
     
             for s2 in strokes: #loop through all strokes for tuples
                 if s != s2:
@@ -382,6 +378,7 @@ class StrokeLabeler:
             stroke_dist.append(closest_stroke_dist) #add it to a list
 
         mean_dist = sum_dist/len(strokes) #calculate the threshold/bin value
+        #calculates all the bin values
         q1_speed = numpy.percentile(draw_speed, 25)
         median_speed = numpy.percentile(draw_speed, 50)
         q3_speed = numpy.percentile(draw_speed, 75)
@@ -411,39 +408,40 @@ class StrokeLabeler:
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
 
-        #bin both length and nearest_neighbor_distance    
+        #bin the features   
         for i in range(len(strokes)):    
-            # l = strokes[i].length()
-            # if l < 300:
-            #     d['length'] = 0
-            # else:
-            #     d['length'] = 1
+            l = strokes[i].length()
+            if l < 300:
+                d['length'] = 0
+            else:
+                d['length'] = 1
 
-            # dist = stroke_dist[i]
-            # if dist < median_dist:
-            #     d['nearest_neighbor_dist'] = 0
-            # else:
-            #     d['nearest_neighbor_dist'] = 1
+            dist = stroke_dist[i]
+            if dist < median_dist:
+                d['nearest_neighbor_dist'] = 0
+            else:
+                d['nearest_neighbor_dist'] = 1
 
-            # sp = draw_speed[i]
-            # if sp < q1_speed:
-            #     d['draw_speed'] = 0
-            # elif sp < median_speed:
-            #     d['draw_speed'] = 1
-            # elif sp < q3_speed:
-            #     d['draw_speed'] = 2
-            # else:
-            #     d['draw_speed'] = 3
+            sp = draw_speed[i]
+            if sp < q1_speed:
+                d['draw_speed'] = 0
+            elif sp < median_speed:
+                d['draw_speed'] = 1
+            elif sp < q3_speed:
+                d['draw_speed'] = 2
+            else:
+                d['draw_speed'] = 3
 
-            # xxx = x_coord[i]
-            # if xxx < q1_x:
-            #     d['x'] = 0
-            # elif xxx < median_x:
-            #     d['x'] = 1
-            # elif xxx < q3_x:
-            #     d['x'] = 2
-            # else:
-            #     d['x'] = 3
+            xxx = x_coord[i]
+            if xxx < q1_x:
+                d['x'] = 0
+            elif xxx < median_x:
+                d['x'] = 1
+            elif xxx < q3_x:
+                d['x'] = 2
+            else:
+                d['x'] = 3
+
             bb = bounding_box_area[i]
             if bb < q1_bb:
                 d['bb_area'] = 0
@@ -453,10 +451,7 @@ class StrokeLabeler:
                 d['bb_area'] = 2
             else:
                 d['bb_area'] = 3
-            # if xxx < median_x:
-            #     d['x'] = 0
-            # else:
-            #     d['x'] = 1
+            
             # We can add more features here just by adding them to the dictionary
             # d as we did with length.  Remember that when you add features,
             # you also need to add them to the three member data structures
@@ -465,10 +460,11 @@ class StrokeLabeler:
 
 
             ret.append(d)  # append the feature dictionary to the list
-        # self.featureIndices['length'] = {0: 0, 1: 1}
-        # self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
-        # self.featureIndices['draw_speed'] = {0: 0, 1: 1, 2: 2, 3: 3}
-        # self.featureIndices['x'] = {0: 0, 1: 1, 2: 2, 3: 3}
+        #adds the featureIndices of each feature
+        self.featureIndices['length'] = {0: 0, 1: 1}
+        self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
+        self.featureIndices['draw_speed'] = {0: 0, 1: 1, 2: 2, 3: 3}
+        self.featureIndices['x'] = {0: 0, 1: 1, 2: 2, 3: 3}
         self.featureIndices['bb_area'] = {0: 0, 1: 1, 2: 2, 3: 3}
         return ret
     
