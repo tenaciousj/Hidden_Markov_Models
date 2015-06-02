@@ -1,0 +1,23 @@
+﻿Results.txt
+Jeanette Pranin (jrp338)
+Jaiveer Kothari (jvk383)
+Nishant Subramani (nso155)
+
+
+1. What feature(s) did you try?
+   1. We decided to try the bounding box of a stroke, the average-x coordinate of a stroke (we assumed text strokes would be towards the left side of the board), the drawing speed of the stroke, and the nearest distance from stroke to stroke (nearest neighbor).
+1. Were they continuous or discrete?
+   1. They were all discretized.
+1. How did you determine thresholds for discrete features? How well did it work?
+   1. For the length feature, we used the built in 300 threshold value. Less than 300 was termed ‘0’ while greater than 300 was termed ‘1.’ For the nearest neighbor stroke distance feature we used the median value of all the distances for each stroke and binned them as less than the median was termed ‘0’ while greater than 300 was termed ‘1.’ For draw speed, we set 3 thresholds, a 25th percentile, 50th percentile, and 75th percentile and assigned 0,1,2,3 respectively for the 4 bins produced. The same 3 thresholds were used for the average x-coordinate feature and we binned them the same way. This binning seemed to work very poorly as the confusion matrix for the best classifier was much worse than the basic classifier.
+
+
+We chose 39 train files and 18 test files. We picked these sizes and files randomly. 
+
+
+Confusion Matrix for Basic Classifier
+{'text': {'text': 108, 'drawing': 79}, 'drawing': {'text': 75, 'drawing': 277}}
+
+
+Confusion Matrix for Best Classifier
+{'text': {'text': 62, 'drawing': 125}, 'drawing': {'text': 115, 'drawing': 237}}
