@@ -284,9 +284,17 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length', 'nearest_neighbor_dist']
-        self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE}
-        self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2}
+
+
+        self.featureNames = ['nearest_neighbor_dist']
+        self.contOrDisc = {'nearest_neighbor_dist' : DISCRETE}
+        self.numFVals = {'nearest_neighbor_dist' : 2}
+        
+
+
+        # self.featureNames = ['length', 'nearest_neighbor_dist']
+        # self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE}
+        # self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -339,11 +347,11 @@ class StrokeLabeler:
 
         #bin both length and nearest_neighbor_distance    
         for i in range(len(strokes)):    
-            l = strokes[i].length()
-            if l < 300:
-                d['length'] = 0
-            else:
-                d['length'] = 1
+            # l = strokes[i].length()
+            # if l < 300:
+            #     d['length'] = 0
+            # else:
+            #     d['length'] = 1
 
             dist = stroke_dist[i]
             if dist < mean_dist:
@@ -361,7 +369,7 @@ class StrokeLabeler:
 
 
             ret.append(d)  # append the feature dictionary to the list
-        self.featureIndices['length'] = {0: 0, 1: 1}
+        # self.featureIndices['length'] = {0: 0, 1: 1}
         self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
 
         return ret
