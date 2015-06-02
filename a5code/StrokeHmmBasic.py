@@ -48,12 +48,10 @@ class HMM:
         self.trainPriors( trainingData, trainingLabels )
         self.trainTransitions( trainingData, trainingLabels )
         self.trainEmissions( trainingData, trainingLabels ) 
-        print "------------------------------------------------------"
         print "HMM trained"
         print "Prior probabilities are:", self.priors
         print "Transition model is:", self.transitions
         print "Evidence model is:", self.emissions
-        print "------------------------------------------------------"
 
     def trainPriors( self, trainingData, trainingLabels ):
         ''' Train the priors based on the data and labels '''
@@ -143,14 +141,14 @@ class HMM:
             This is an implementation of the Viterbi algorithm '''
 
         #Debugging tools to help see what is being accessed
-        print "Data is: " + str(data)
-        print "States are: " + str(self.states)
-        print "FeatureNames are: " + str(self.featureNames)
-        print "Emissions are: " + str(self.emissions)
-        print "Feature Indices are " + str(self.featureIndices)
-        print "Transitions are " + str(self.transitions)
-        print "States are " + str(self.states)
-        print "------------------------------------------------------"
+        # print "Data is: " + str(data)
+        # print "States are: " + str(self.states)
+        # print "FeatureNames are: " + str(self.featureNames)
+        # print "Emissions are: " + str(self.emissions)
+        # print "Feature Indices are " + str(self.featureIndices)
+        # print "Transitions are " + str(self.transitions)
+        # print "States are " + str(self.states)
+        # print "------------------------------------------------------"
 
         #creates a list of dictionaries that will hold the partial probabilities of each state
         #viterbi_calc will be used to refer to the prior partial probabilities in the code below
@@ -217,6 +215,7 @@ class HMM:
                 #keep track of the paths so far
                 new_path[y] = path[state] + [y]
 
+            #don't need to remember old path
             path = new_path
 
             
@@ -252,9 +251,6 @@ class HMM:
                 
         return prob
         
-
-
-
 
 
 class StrokeLabeler:
@@ -722,42 +718,42 @@ def test_trainHMM():
 
 
 ##############CODE FOR RESULTS.TXT AND CONFUSION MATRIX##############
-sl = StrokeLabeler()
+# sl = StrokeLabeler()
 
-#training files
-sl.trainHMMDir("../trainForResults/")
+# #training files
+# sl.trainHMMDir("../trainForResults/")
 
-true_labels = []
-classifications_labels = []
+# true_labels = []
+# classifications_labels = []
 
-for fFileObj in os.walk("../testForResults/"):
-    lFileList = fFileObj[2]
-    break
-
-
-goodList = []
-for x in lFileList:
-    if not x.startswith('.'):
-        goodList.append(x)
-
-tFiles = [ "../testForResults/" + "/" + f for f in goodList ] 
-
-for test_file in tFiles:
-
-    strokes, labels = sl.loadLabeledFile(test_file)
-    true_labels.extend(labels)
-
-    mylabels = sl.labelStrokes(strokes)
-    classifications_labels.extend(mylabels)
-
-big_confusion_matrix = sl.confusion(true_labels, classifications_labels)
-
-print "------------------------------------------------------"
-print "BIG CONFUSION MATRIX"
-print big_confusion_matrix
+# for fFileObj in os.walk("../testForResults/"):
+#     lFileList = fFileObj[2]
+#     break
 
 
+# goodList = []
+# for x in lFileList:
+#     if not x.startswith('.'):
+#         goodList.append(x)
 
+# tFiles = [ "../testForResults/" + "/" + f for f in goodList ] 
+
+# for test_file in tFiles:
+
+#     strokes, labels = sl.loadLabeledFile(test_file)
+#     true_labels.extend(labels)
+
+#     mylabels = sl.labelStrokes(strokes)
+#     classifications_labels.extend(mylabels)
+
+# big_confusion_matrix = sl.confusion(true_labels, classifications_labels)
+
+# print "------------------------------------------------------"
+# print "BIG CONFUSION MATRIX"
+# print big_confusion_matrix
+
+
+##################TESTING ON SEAWEED EXAMPLE FROM CLASS####################
 # print "------------------------------------------------------"
 # print "------------------------------------------------------"
 # print "------------------------------------------------------"

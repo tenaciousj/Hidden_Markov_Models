@@ -49,12 +49,10 @@ class HMM:
         self.trainPriors( trainingData, trainingLabels )
         self.trainTransitions( trainingData, trainingLabels )
         self.trainEmissions( trainingData, trainingLabels ) 
-        print "------------------------------------------------------"
         print "HMM trained"
         print "Prior probabilities are:", self.priors
         print "Transition model is:", self.transitions
         print "Evidence model is:", self.emissions
-        print "------------------------------------------------------"
 
     def trainPriors( self, trainingData, trainingLabels ):
         ''' Train the priors based on the data and labels '''
@@ -144,14 +142,14 @@ class HMM:
             This is an implementation of the Viterbi algorithm '''
 
         #Debugging tools to help see what is being accessed
-        print "Data is: " + str(data)
-        print "States are: " + str(self.states)
-        print "FeatureNames are: " + str(self.featureNames)
-        print "Emissions are: " + str(self.emissions)
-        print "Feature Indices are " + str(self.featureIndices)
-        print "Transitions are " + str(self.transitions)
-        print "States are " + str(self.states)
-        print "------------------------------------------------------"
+        # print "Data is: " + str(data)
+        # print "States are: " + str(self.states)
+        # print "FeatureNames are: " + str(self.featureNames)
+        # print "Emissions are: " + str(self.emissions)
+        # print "Feature Indices are " + str(self.featureIndices)
+        # print "Transitions are " + str(self.transitions)
+        # print "States are " + str(self.states)
+        # print "------------------------------------------------------"
 
         #creates a list of dictionaries that will hold the partial probabilities of each state
         #viterbi_calc will be used to refer to the prior partial probabilities in the code below
@@ -218,6 +216,7 @@ class HMM:
                 #keep track of the paths so far
                 new_path[y] = path[state] + [y]
 
+            #don't have to remember old path
             path = new_path
 
             
@@ -378,6 +377,7 @@ class StrokeLabeler:
             stroke_dist.append(closest_stroke_dist) #add it to a list
 
         mean_dist = sum_dist/len(strokes) #calculate the threshold/bin value
+
         #calculates all the bin values
         q1_speed = numpy.percentile(draw_speed, 25)
         median_speed = numpy.percentile(draw_speed, 50)
@@ -391,22 +391,9 @@ class StrokeLabeler:
         bb_median = numpy.percentile(bounding_box_area, 50)
         q3_bb = numpy.percentile(bounding_box_area, 75)
         bb_mean = numpy.mean(bounding_box_area)           
-            # If we wanted to use length as a continuous feature, we
-            # would simply use the following line to set its value
-            #d['length'] = s.length()
 
-            # To use it as a discrete feature, we have to "bin" it, that is
-            # we define ranges for "short" (<300 units) and "long" (>=300 units)
-            # Short strokes get a discrete value 0, long strokes get
-            # discrete value 1.
-            # Note that these bins were determined by trial and error, and my
-            # looking at the length data, to determine what a good discriminating
-            # cutoff would be.  You might choose to add more bins
-            # or to change the thresholds.  For any other discrete feature you
-            # add, it's up to you to determine how many and what bins you want
-            # to use.  This is an important process and can be tricky.  Try
-            # to use a principled approach (i.e., look at the data) rather
-            # than just guessing.
+
+
 
         #bin the features   
         for i in range(len(strokes)):    
@@ -452,14 +439,10 @@ class StrokeLabeler:
             else:
                 d['bb_area'] = 3
             
-            # We can add more features here just by adding them to the dictionary
-            # d as we did with length.  Remember that when you add features,
-            # you also need to add them to the three member data structures
-            # above in the contructor: self.featureNames, self.contOrDisc,
-            #    self.numFVals (for discrete features only)
 
 
             ret.append(d)  # append the feature dictionary to the list
+
         #adds the featureIndices of each feature
         self.featureIndices['length'] = {0: 0, 1: 1}
         self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
@@ -855,41 +838,41 @@ def test_trainHMM():
 
 
 ##############CODE FOR RESULTS.TXT AND CONFUSION MATRIX##############
-sl = StrokeLabeler()
+# sl = StrokeLabeler()
 
-#training files
-sl.trainHMMDir("../trainForResults/")
+# #training files
+# sl.trainHMMDir("../trainForResults/")
 
-true_labels = []
-classifications_labels = []
+# true_labels = []
+# classifications_labels = []
 
-for fFileObj in os.walk("../testForResults/"):
-    lFileList = fFileObj[2]
-    break
-
-
-goodList = []
-for x in lFileList:
-    if not x.startswith('.'):
-        goodList.append(x)
-
-tFiles = [ "../testForResults/" + "/" + f for f in goodList ] 
-
-for test_file in tFiles:
-
-    strokes, labels = sl.loadLabeledFile(test_file)
-    true_labels.extend(labels)
-
-    mylabels = sl.labelStrokes(strokes)
-    classifications_labels.extend(mylabels)
-
-big_confusion_matrix = sl.confusion(true_labels, classifications_labels)
-
-print "------------------------------------------------------"
-print "BIG CONFUSION MATRIX"
-print big_confusion_matrix
+# for fFileObj in os.walk("../testForResults/"):
+#     lFileList = fFileObj[2]
+#     break
 
 
+# goodList = []
+# for x in lFileList:
+#     if not x.startswith('.'):
+#         goodList.append(x)
+
+# tFiles = [ "../testForResults/" + "/" + f for f in goodList ] 
+
+# for test_file in tFiles:
+
+#     strokes, labels = sl.loadLabeledFile(test_file)
+#     true_labels.extend(labels)
+
+#     mylabels = sl.labelStrokes(strokes)
+#     classifications_labels.extend(mylabels)
+
+# big_confusion_matrix = sl.confusion(true_labels, classifications_labels)
+
+# print "------------------------------------------------------"
+# print "BIG CONFUSION MATRIX"
+# print big_confusion_matrix
+
+##################TESTING ON SEAWEED EXAMPLE FROM CLASS####################
 # print "------------------------------------------------------"
 # print "------------------------------------------------------"
 # print "------------------------------------------------------"
