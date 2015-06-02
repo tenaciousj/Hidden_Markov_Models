@@ -284,9 +284,9 @@ class StrokeLabeler:
         #    name to whether it is continuous or discrete
         # numFVals is a dictionary specifying the number of legal values for
         #    each discrete feature
-        self.featureNames = ['length', 'hello']
-        self.contOrDisc = {'length': DISCRETE, 'hello': DISCRETE}
-        self.numFVals = {'length': 2, 'hello': 2}
+        self.featureNames = ['length', 'nearest_neighbor_dist']
+        self.contOrDisc = {'length': DISCRETE, 'nearest_neighbor_dist' : DISCRETE}
+        self.numFVals = { 'length': 2, 'nearest_neighbor_dist' : 2}
 
     def featurefy( self, strokes ):
         ''' Converts the list of strokes into a list of feature dictionaries
@@ -294,9 +294,32 @@ class StrokeLabeler:
             The names of features used here have to match the names
             passed into the HMM'''
         ret = []
-        for s in strokes:
-            d = {}  # The feature dictionary to be returned for one stroke
+        d = {}  # The feature dictionary to be returned for one stroke
 
+        #creating a feature that calculates proximity to nearest neighbor
+        #This feature calculates the euclidean distance between starting location of stroke s and s2 and finds the smallest distance between
+        #s and any other s2. These distances were binned around the mean, with anything less being binned as a 0 and anything greater being binned
+        #as a 1.
+        sum_dist = 0
+        mean_dist = None
+        stroke_dist = []
+        for s in strokes: #loop through all strokes
+            closest_stroke_dist = 1000000
+            #nearest_stroke = None
+            start_pt = s.points[0]
+            for s2 in strokes: #loop through all strokes for tuples
+                if s != s2:
+                    s2_pt = s2.points[0]
+                    xdiff = start_pt[0] - s2_pt[0]
+                    ydiff = start_pt[1] - s2_pt[1]
+                    dist = math.sqrt(xdiff**2 + ydiff**2) #calculates distance
+                    if dist < closest_stroke_dist: #checks if its better than previous
+                        closest_stroke_dist = dis
+            
+            sum_dist += closest_stroke_dist #sum the distances
+            stroke_dist.append(closest_stroke_dist) #add it to a list
+        mean_dist = sum_dist/len(strokes) #calculate the threshold/bin value
+                    
             # If we wanted to use length as a continuous feature, we
             # would simply use the following line to set its value
             #d['length'] = s.length()
@@ -313,13 +336,21 @@ class StrokeLabeler:
             # to use.  This is an important process and can be tricky.  Try
             # to use a principled approach (i.e., look at the data) rather
             # than just guessing.
-            l = s.length()
+
+        #bin both length and nearest_neighbor_distance    
+        for i in range(len(strokes)):    
+            l = strokes[i].length()
             if l < 300:
                 d['length'] = 0
-                d['hello'] = 0
             else:
                 d['length'] = 1
-                d['hello'] = 1
+
+            dist = stroke_dist[i]
+            if dist < mean_dist:
+                d['nearest_neighbor_dist'] = 0
+            else:
+                d['nearest_neighbor_dist'] = 1
+
 
 
             # We can add more features here just by adding them to the dictionary
@@ -331,10 +362,7 @@ class StrokeLabeler:
 
             ret.append(d)  # append the feature dictionary to the list
         self.featureIndices['length'] = {0: 0, 1: 1}
-        self.featureIndices['hello'] = {0: 0, 1: 1}
-
-
-
+        self.featureIndices['nearest_neighbor_dist'] = {0: 0, 1: 1}
 
         return ret
     
@@ -724,12 +752,12 @@ def test_trainHMM():
     return test_hmm.label(test_sequence)
 
 
-sl = StrokeLabeler()
-sl.trainHMMDir("../trainingFiles/")
-strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
-print "True labels are: " + str(labels)
-mylabels = sl.labelStrokes(strokes)
-confusion_matrix = sl.confusion(labels, mylabels)
+# sl = StrokeLabeler()
+# sl.trainHMMDir("../trainingFiles/")
+# strokes,labels = sl.loadLabeledFile("../trainingFiles/0128_1.7.1.labeled.xml")
+# print "True labels are: " + str(labels)
+# mylabels = sl.labelStrokes(strokes)
+# confusion_matrix = sl.confusion(labels, mylabels)
 
 
 # print "------------------------------------------------------"
